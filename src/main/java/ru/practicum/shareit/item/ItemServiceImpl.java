@@ -3,10 +3,10 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ForbiddenException;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.UserService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,12 +17,11 @@ import java.util.Map;
 public class ItemServiceImpl implements ItemService {
     private final Map<Integer, Item> items = new HashMap<>();
     private Integer idCounter = 1;
-    private final UserService userService;
 
 
     @Override
     public Item createItem(ItemDto itemDto, Integer ownerId) {
-        Item item = ItemMapper.mapToItem(itemDto, userService.getUserById(ownerId));
+        Item item = ItemMapper.mapToItem(itemDto, ownerId);
         item.setId(idCounter++);
         items.put(item.getId(), item);
         return item;
@@ -31,7 +30,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Item updateItem(ItemDto itemDto, Integer itemId, Integer ownerId) {
         Item newItem = items.get(itemId);
-        if (!newItem.getOwner().getId().equals(ownerId)) {
+        if (!newItem.getOwner().equals(ownerId)) {
             throw new ForbiddenException("Только владелец может обновлять информацию");
         }
         if (itemDto.getName() != null) {
@@ -48,12 +47,16 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item getItemById(Integer itemId) {
-        return items.get(itemId);
+        Item item = items.get(itemId);
+        if (item == null) {
+            throw new NotFoundException("Предмет не найден");
+        }
+        return item;
     }
 
     @Override
     public List<Item> getOwnersItem(Integer ownerId) {
-        return items.values().stream().filter(item -> item.getOwner().getId().equals(ownerId)).toList();
+        return items.values().stream().filter(item -> item.getOwner().equals(ownerId)).toList();
     }
 
     @Override

@@ -3,6 +3,7 @@ package ru.practicum.shareit.user;
 import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ConflictException;
+import ru.practicum.shareit.exception.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +49,7 @@ public class UserServiceImpl implements UserService {
     public User getUserById(Integer id) {
         User user = users.get(id);
         if (user == null) {
-            throw new NullPointerException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
         return user;
     }
@@ -60,9 +61,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Integer id) {
-        if (!users.containsKey(id)) {
-            throw new NullPointerException("Пользователь с Id " + id + "не найден");
-        }
         users.remove(id);
     }
 }

@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.UserService;
 
 import java.util.List;
 
@@ -16,11 +18,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemController {
     private final ItemService itemService;
+    private final UserService userService;
     private static final String HEAD = "X-Sharer-User-Id";
 
     @PostMapping
     public ItemDto createItem(@Valid @RequestBody ItemDto itemDto, @RequestHeader(HEAD) Integer ownerId) {
-        return ItemMapper.mapToItemDto(itemService.createItem(itemDto, ownerId));
+        User owner = userService.getUserById(ownerId);
+        return ItemMapper.mapToItemDto(itemService.createItem(itemDto, owner.getId()));
     }
 
     @PatchMapping("/{itemId}")
