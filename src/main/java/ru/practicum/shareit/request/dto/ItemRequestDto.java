@@ -2,7 +2,7 @@ package ru.practicum.shareit.request.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 
