@@ -1,6 +1,8 @@
 package ru.practicum.shareit.booking;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.shareit.booking.model.Booking;
 
 import java.time.LocalDateTime;
@@ -35,4 +37,12 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     Optional<Booking> findFirstByItemIdAndStartAfterOrderByStartAsc(Integer itemId, LocalDateTime date);
 
     boolean existsByItemIdAndBookerIdAndEndBefore(Integer itemId, Integer bookerId, LocalDateTime date);
+
+    @Query("SELECT COUNT(b) > 0 FROM Booking b " +
+            "WHERE b.item.id = :itemId " +
+            "AND b.status IN ('APPROVED', 'WAITING') " +
+            "AND (:start < b.end AND :end > b.start)")
+    boolean existsOverlappingBookings(@Param("itemId") Integer itemId,
+                                      @Param("start") LocalDateTime start,
+                                      @Param("end") LocalDateTime end);
 }

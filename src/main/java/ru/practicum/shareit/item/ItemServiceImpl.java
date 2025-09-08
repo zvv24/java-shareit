@@ -3,7 +3,6 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.BookingRepository;
-import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.comment.CommentMapper;
 import ru.practicum.shareit.comment.CommentRepository;
@@ -19,6 +18,7 @@ import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,7 +115,7 @@ public class ItemServiceImpl implements ItemService {
         Optional<Booking> lastBooking = bookingRepository
                 .findFirstByItemIdAndEndBeforeOrderByEndDesc(itemId, now);
         lastBooking.ifPresent(booking -> {
-            BookingShortDto dto = new BookingShortDto();
+            ItemDto.BookingShortDto dto = new ItemDto.BookingShortDto();
             dto.setId(booking.getId());
             dto.setBookerId(booking.getBooker().getId());
             itemDto.setLastBooking(dto);
@@ -124,7 +124,7 @@ public class ItemServiceImpl implements ItemService {
         Optional<Booking> nextBooking = bookingRepository
                 .findFirstByItemIdAndStartAfterOrderByStartAsc(itemId, now);
         nextBooking.ifPresent(booking -> {
-            BookingShortDto dto = new BookingShortDto();
+            ItemDto.BookingShortDto dto = new ItemDto.BookingShortDto();
             dto.setId(booking.getId());
             dto.setBookerId(booking.getBooker().getId());
             itemDto.setNextBooking(dto);
@@ -134,6 +134,7 @@ public class ItemServiceImpl implements ItemService {
     private void addCommentsToItemDto(ItemDto itemDto, Integer itemId) {
         List<Comment> comments = commentRepository.findByItemId(itemId);
         List<CommentDto> commentDto = comments.stream()
+                .sorted(Comparator.comparing(Comment::getCreated).reversed())
                 .map(CommentMapper::mapToCommentDto)
                 .toList();
         itemDto.setComments(commentDto);
