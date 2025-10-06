@@ -17,23 +17,34 @@ class UserDtoJsonTest {
 
     @Test
     void testSerialize() throws Exception {
-        UserDto userDto = new UserDto(1, "UserDto", "UserDto@example.com");
+        UserDto userDto = new UserDto(1, "User", "User@email.com");
 
         JsonContent<UserDto> result = json.write(userDto);
 
         assertThat(result).extractingJsonPathNumberValue("$.id").isEqualTo(1);
-        assertThat(result).extractingJsonPathStringValue("$.name").isEqualTo("UserDto");
-        assertThat(result).extractingJsonPathStringValue("$.email").isEqualTo("UserDto@example.com");
+        assertThat(result).extractingJsonPathStringValue("$.name").isEqualTo("User");
+        assertThat(result).extractingJsonPathStringValue("$.email").isEqualTo("User@email.com");
     }
 
     @Test
     void testDeserialize() throws Exception {
-        String content = "{\"id\":1,\"name\":\"UserDto\",\"email\":\"UserDto@example.com\"}";
+        String content = "{\"id\":1,\"name\":\"User\",\"email\":\"User@email.com\"}";
 
         UserDto result = json.parseObject(content);
 
         assertThat(result.getId()).isEqualTo(1);
-        assertThat(result.getName()).isEqualTo("UserDto");
-        assertThat(result.getEmail()).isEqualTo("UserDto@example.com");
+        assertThat(result.getName()).isEqualTo("User");
+        assertThat(result.getEmail()).isEqualTo("User@email.com");
+    }
+
+    @Test
+    void testDeserializeWithNullValues() throws Exception {
+        String content = "{\"name\":\"User\"}";
+
+        UserDto result = json.parseObject(content);
+
+        assertThat(result.getName()).isEqualTo("User");
+        assertThat(result.getId()).isNull();
+        assertThat(result.getEmail()).isNull();
     }
 }

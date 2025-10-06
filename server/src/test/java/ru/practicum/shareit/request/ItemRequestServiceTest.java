@@ -51,7 +51,7 @@ class ItemRequestServiceTest {
         requestDto.setDescription("Description");
 
         assertThrows(NotFoundException.class,
-                () -> itemRequestService.createRequest(999, requestDto));
+                () -> itemRequestService.createRequest(1, requestDto));
     }
 
     @Test
@@ -116,5 +116,38 @@ class ItemRequestServiceTest {
         assertEquals("new item", result.getDescription());
         assertFalse(result.getItems().isEmpty());
         assertEquals("item", result.getItems().get(0).getName());
+    }
+
+    @Test
+    void getRequestByIdWithNonExistentRequestMustThrowException() {
+        assertThrows(NotFoundException.class, () -> itemRequestService.getRequestById(1));
+    }
+
+    @Test
+    void getRequestsWithNonExistentUserMustThrowException() {
+        assertThrows(NotFoundException.class, () -> itemRequestService.getRequests(1));
+    }
+
+    @Test
+    void getRequestByIdWithItemsMustReturnRequestWithItems() {
+        User user = userRepository.save(new User(null, "User", "User@email.com"));
+        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
+
+        ItemRequestDto requestDto = new ItemRequestDto();
+        requestDto.setDescription("Text");
+        ItemRequestDto savedRequest = itemRequestService.createRequest(user.getId(), requestDto);
+
+        ItemDto itemDto = new ItemDto();
+        itemDto.setName("Item");
+        itemDto.setDescription("Description");
+        itemDto.setAvailable(true);
+        itemDto.setRequestId(savedRequest.getId());
+        itemService.createItem(itemDto, owner.getId());
+
+        ItemRequestDto result = itemRequestService.getRequestById(savedRequest.getId());
+
+        assertNotNull(result);
+        assertEquals(1, result.getItems().size());
+        assertEquals("Item", result.getItems().get(0).getName());
     }
 }

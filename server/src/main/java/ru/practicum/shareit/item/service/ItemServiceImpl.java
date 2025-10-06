@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,6 +71,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto getItemById(Integer itemId, Integer userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
@@ -145,7 +149,7 @@ public class ItemServiceImpl implements ItemService {
         List<CommentDto> commentDto = comments.stream()
                 .sorted(Comparator.comparing(Comment::getCreated).reversed())
                 .map(CommentMapper::mapToCommentDto)
-                .toList();
+                .collect(Collectors.toList());
         itemDto.setComments(commentDto);
     }
 }

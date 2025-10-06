@@ -12,9 +12,6 @@ import ru.practicum.shareit.util.Constants;
 
 import java.util.List;
 
-/**
- * TODO Sprint add-controllers.
- */
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor

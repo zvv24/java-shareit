@@ -29,7 +29,7 @@ class ItemRequestDtoJsonTest {
 
         ItemRequestDto requestDto = new ItemRequestDto();
         requestDto.setId(1);
-        requestDto.setDescription("New Description");
+        requestDto.setDescription("Description");
         requestDto.setRequestor(1);
         requestDto.setCreated(LocalDateTime.of(2025, 10, 5, 21, 0, 0));
         requestDto.setItems(List.of(itemDto));
@@ -38,7 +38,7 @@ class ItemRequestDtoJsonTest {
 
         assertThat(result).extractingJsonPathNumberValue("$.id").isEqualTo(1);
         assertThat(result).extractingJsonPathStringValue("$.description")
-                .isEqualTo("New Description");
+                .isEqualTo("Description");
         assertThat(result).extractingJsonPathNumberValue("$.requestor").isEqualTo(1);
         assertThat(result).extractingJsonPathStringValue("$.created")
                 .isEqualTo("2025-10-05T21:00:00");
@@ -48,13 +48,13 @@ class ItemRequestDtoJsonTest {
 
     @Test
     void testDeserialize() throws Exception {
-        String content = "{\"id\":1,\"description\":\"New Description\",\"requestor\":1," +
+        String content = "{\"id\":1,\"description\":\"Description\",\"requestor\":1," +
                 "\"created\":\"2025-10-05T21:00:00\",\"items\":[]}";
 
         ItemRequestDto result = json.parseObject(content);
 
         assertThat(result.getId()).isEqualTo(1);
-        assertThat(result.getDescription()).isEqualTo("New Description");
+        assertThat(result.getDescription()).isEqualTo("Description");
         assertThat(result.getRequestor()).isEqualTo(1);
         assertThat(result.getCreated()).isEqualTo(LocalDateTime.of(2025, 10, 5,
                 21, 0, 0));
@@ -63,11 +63,11 @@ class ItemRequestDtoJsonTest {
 
     @Test
     void testDeserializeWithNullValues() throws Exception {
-        String content = "{\"description\":\"New Description\"}";
+        String content = "{\"description\":\"Description\"}";
 
         ItemRequestDto result = json.parseObject(content);
 
-        assertThat(result.getDescription()).isEqualTo("New Description");
+        assertThat(result.getDescription()).isEqualTo("Description");
         assertThat(result.getId()).isNull();
         assertThat(result.getRequestor()).isNull();
         assertThat(result.getCreated()).isNull();

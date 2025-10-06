@@ -51,4 +51,16 @@ class BookingDtoJsonTest {
         assertThat(result.getStart()).isEqualTo(LocalDateTime.of(2025, 10, 5, 21, 0));
         assertThat(result.getEnd()).isEqualTo(LocalDateTime.of(2025, 10, 6, 21, 0));
     }
+
+    @Test
+    void testDeserializeWithNullValues() throws Exception {
+        String content = "{\"itemId\":1}";
+
+        BookingDto result = json.parseObject(content);
+
+        assertThat(result.getItemId()).isEqualTo(1);
+        assertThat(result.getId()).isNull();
+        assertThat(result.getStart()).isNull();
+        assertThat(result.getEnd()).isNull();
+    }
 }

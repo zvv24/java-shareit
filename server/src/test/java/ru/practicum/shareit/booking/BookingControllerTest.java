@@ -18,10 +18,12 @@ import ru.practicum.shareit.util.Constants;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(BookingController.class)
 class BookingControllerTest {
@@ -41,13 +43,13 @@ class BookingControllerTest {
 
         BookingDto bookingDto = new BookingDto();
         bookingDto.setItemId(1);
-        bookingDto.setStart(LocalDateTime.now().plusDays(1));
-        bookingDto.setEnd(LocalDateTime.now().plusDays(2));
+        bookingDto.setStart(LocalDateTime.now().plusHours(1));
+        bookingDto.setEnd(LocalDateTime.now().plusHours(2));
 
         BookingFullDto bookingFullDto = new BookingFullDto();
         bookingFullDto.setId(1);
-        bookingFullDto.setStart(LocalDateTime.now().plusDays(1));
-        bookingFullDto.setEnd(LocalDateTime.now().plusDays(2));
+        bookingFullDto.setStart(LocalDateTime.now().plusHours(1));
+        bookingFullDto.setEnd(LocalDateTime.now().plusHours(2));
         bookingFullDto.setStatus(BookingStatus.WAITING);
 
         when(bookingService.createBooking(any(BookingDto.class), eq(userId)))
@@ -85,7 +87,7 @@ class BookingControllerTest {
     @Test
     void getBookingByIdMustReturnBooking() throws Exception {
         Integer userId = 1;
-        Integer bookingId = 1;
+        Integer bookingId = 2;
 
         BookingFullDto bookingFullDto = new BookingFullDto();
         bookingFullDto.setId(1);
@@ -135,5 +137,22 @@ class BookingControllerTest {
                         .param("state", state))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(bookings.get(0).getId()));
+    }
+
+    @Test
+    void getUserBookingsWithDifferentStatesMustReturnBookings() throws Exception {
+        Integer id = 1;
+        BookingFullDto bookingFullDto = new BookingFullDto();
+        bookingFullDto.setId(1);
+        List<BookingFullDto> bookings = List.of(bookingFullDto);
+
+        when(bookingService.getUserBookings(eq(id), any(BookingState.class))).thenReturn(bookings);
+
+        for (BookingState state : BookingState.values()) {
+            mockMvc.perform(get("/bookings")
+                            .header(Constants.HEAD, id)
+                            .param("state", state.toString()))
+                    .andExpect(status().isOk());
+        }
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.request.controller.ItemRequestController;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
@@ -16,10 +17,13 @@ import ru.practicum.shareit.util.Constants;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ItemRequestController.class)
 class ItemRequestControllerTest {
@@ -54,6 +58,30 @@ class ItemRequestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.description").value("Description"));
+    }
+
+    @Test
+    void createRequestWithInvalidUserMustReturnError() throws Exception {
+        ItemRequestDto requestDto = new ItemRequestDto();
+        requestDto.setDescription("Description");
+
+        when(itemRequestService.createRequest(any(Integer.class), any(ItemRequestDto.class)))
+                .thenThrow(new NotFoundException("Пользователь не найден"));
+
+        mockMvc.perform(post("/requests")
+                        .header(Constants.HEAD, 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getRequestByIdWithNonExistentRequestMustReturnError() throws Exception {
+        when(itemRequestService.getRequestById(any(Integer.class)))
+                .thenThrow(new NotFoundException("Запрос не найден"));
+
+        mockMvc.perform(get("/requests/{requestId}", 1))
+                .andExpect(status().isNotFound());
     }
 
     @Test

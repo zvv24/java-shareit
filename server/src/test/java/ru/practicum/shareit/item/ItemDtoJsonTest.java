@@ -49,4 +49,17 @@ class ItemDtoJsonTest {
         assertThat(result.getOwner()).isEqualTo(1);
         assertThat(result.getRequestId()).isEqualTo(1);
     }
+
+    @Test
+    void testDeserializeWithNullValues() throws Exception {
+        String content = "{\"name\":\"Item\",\"available\":true}";
+
+        ItemDto result = json.parseObject(content);
+
+        assertThat(result.getName()).isEqualTo("Item");
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getId()).isNull();
+        assertThat(result.getDescription()).isNull();
+        assertThat(result.getOwner()).isNull();
+    }
 }

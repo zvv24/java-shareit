@@ -1,6 +1,5 @@
 package ru.practicum.shareit.booking.client;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,6 @@ import java.util.Map;
 public class BookingClient extends BaseClient {
     private static final String API_PREFIX = "/bookings";
 
-    @Autowired
     public BookingClient(@Value("${shareit-server.url}") String serverUrl, RestTemplateBuilder builder) {
         super(
                 builder
@@ -31,12 +29,12 @@ public class BookingClient extends BaseClient {
         return post("", userId, bookingDto);
     }
 
-    public ResponseEntity<Object> updateBookingStatus(Integer bookingId, Boolean approved, Integer userId) {
+    public ResponseEntity<Object> updateBookingStatus(Integer bookingId, Boolean approved, Long userId) {
         Map<String, Object> parameters = Map.of("approved", approved);
-        return patch("/" + bookingId + "?approved={approved}", userId, parameters);
+        return patch("/" + bookingId + "?approved={approved}", userId, parameters, null);
     }
 
-    public ResponseEntity<Object> getBookingById(Integer bookingId, Integer userId) {
+    public ResponseEntity<Object> getBookingById(Integer bookingId, Long userId) {
         return get("/" + bookingId, userId);
     }
 

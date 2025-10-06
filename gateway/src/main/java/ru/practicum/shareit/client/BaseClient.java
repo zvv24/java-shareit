@@ -19,7 +19,7 @@ public class BaseClient {
         return get(path, null, null);
     }
 
-    protected ResponseEntity<Object> get(String path, long userId) {
+    protected ResponseEntity<Object> get(String path, Long userId) {
         return get(path, userId, null);
     }
 

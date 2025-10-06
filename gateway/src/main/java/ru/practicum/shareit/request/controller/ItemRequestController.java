@@ -1,7 +1,8 @@
 package ru.practicum.shareit.request.controller;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.request.client.ItemRequestClient;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
@@ -9,7 +10,8 @@ import ru.practicum.shareit.util.Constants;
 
 @RestController
 @RequestMapping(path = "/requests")
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Validated
 public class ItemRequestController {
     private final ItemRequestClient itemRequestClient;
 
@@ -20,7 +22,7 @@ public class ItemRequestController {
     }
 
     @GetMapping
-    public ResponseEntity<Object> getRequests(@RequestHeader(Constants.HEAD) Integer userId) {
+    public ResponseEntity<Object> getRequests(@RequestHeader(Constants.HEAD) Long userId) {
         return itemRequestClient.getRequests(userId);
     }
 
@@ -31,7 +33,7 @@ public class ItemRequestController {
 
     @GetMapping("/{requestId}")
     public ResponseEntity<Object> getRequestById(@PathVariable Integer requestId,
-                                                 @RequestHeader(Constants.HEAD) Integer userId) {
+                                                 @RequestHeader(Constants.HEAD) Long userId) {
         return itemRequestClient.getRequestById(requestId, userId);
     }
 }

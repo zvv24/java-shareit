@@ -1,7 +1,8 @@
 package ru.practicum.shareit.item.controller;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.client.ItemClient;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -10,7 +11,8 @@ import ru.practicum.shareit.util.Constants;
 
 @RestController
 @RequestMapping("/items")
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Validated
 public class ItemController {
     private final ItemClient itemClient;
 
@@ -29,18 +31,24 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     public ResponseEntity<Object> getItemById(@PathVariable Integer itemId,
-                                              @RequestHeader(Constants.HEAD) Integer userId) {
+                                              @RequestHeader(Constants.HEAD) Long userId) {
         return itemClient.getItemById(itemId, userId);
     }
 
     @GetMapping
-    public ResponseEntity<Object> getOwnersItems(@RequestHeader(Constants.HEAD) Integer ownerId) {
+    public ResponseEntity<Object> getOwnersItems(@RequestHeader(Constants.HEAD) Long ownerId) {
         return itemClient.getOwnersItems(ownerId);
     }
 
     @GetMapping("/search")
     public ResponseEntity<Object> searchItems(@RequestParam String text) {
         return itemClient.searchItems(text);
+    }
+
+    @DeleteMapping("/{itemId}")
+    public ResponseEntity<Object> deleteItem(@PathVariable Integer itemId,
+                                             @RequestHeader(Constants.HEAD) Integer ownerId) {
+        return itemClient.deleteItem(itemId, ownerId);
     }
 
     @PostMapping("/{itemId}/comment")

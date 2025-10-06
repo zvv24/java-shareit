@@ -14,10 +14,12 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
 class UserControllerTest {
@@ -33,8 +35,8 @@ class UserControllerTest {
 
     @Test
     void createUserMustReturnUser() throws Exception {
-        UserDto userDto = new UserDto(null, "User", "User@example.com");
-        User user = new User(1, "User", "User@example.com");
+        UserDto userDto = new UserDto(null, "User", "User@email.com");
+        User user = new User(1, "User", "User@email.com");
 
         when(userService.createUser(any(User.class)))
                 .thenReturn(user);
@@ -45,14 +47,14 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("User"))
-                .andExpect(jsonPath("$.email").value("User@example.com"));
+                .andExpect(jsonPath("$.email").value("User@email.com"));
     }
 
     @Test
     void updateUserMustReturnUpdatedUser() throws Exception {
         Integer userId = 1;
-        UserDto userDto = new UserDto(null, "UserDto", "UserDto@example.com");
-        User user = new User(1, "User", "User@example.com");
+        UserDto userDto = new UserDto(null, "UserDto", "UserDto@email.com");
+        User user = new User(1, "User", "User@email.com");
 
         when(userService.updateUser(eq(userId), any(User.class)))
                 .thenReturn(user);
@@ -62,14 +64,14 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(userDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("User"))
-                .andExpect(jsonPath("$.email").value("User@example.com"));
+                .andExpect(jsonPath("$.email").value("User@email.com"));
     }
 
     @Test
     void getAllUsersMustReturnUsers() throws Exception {
         List<User> users = List.of(
-                new User(1, "User1", "User1@example.com"),
-                new User(2, "User2", "User2@example.com")
+                new User(1, "User1", "User1@email.com"),
+                new User(2, "User2", "User2@email.com")
         );
 
         when(userService.getAllUsers())
@@ -85,7 +87,7 @@ class UserControllerTest {
     @Test
     void getUserByIdMustReturnUser() throws Exception {
         Integer userId = 1;
-        User user = new User(1, "User", "User@example.com");
+        User user = new User(1, "User", "User@email.com");
 
         when(userService.getUserById(eq(userId)))
                 .thenReturn(user);
@@ -94,7 +96,7 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("User"))
-                .andExpect(jsonPath("$.email").value("User@example.com"));
+                .andExpect(jsonPath("$.email").value("User@email.com"));
     }
 
     @Test

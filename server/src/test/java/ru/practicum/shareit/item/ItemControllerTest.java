@@ -114,7 +114,7 @@ class ItemControllerTest {
 
     @Test
     void searchingItemsMustReturnItems() throws Exception {
-        User owner = new User(1, "Owner", "owner@email.com");
+        User owner = new User(1, "Owner", "Owner@email.com");
         Item item = new Item(1, "Item", "Description new Item", true, owner, null);
         List<Item> items = List.of(item);
 
@@ -147,5 +147,16 @@ class ItemControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(savedCommentDto.getId()))
                 .andExpect(jsonPath("$.text").value(savedCommentDto.getText()));
+    }
+
+    @Test
+    void getOwnersItemWithEmptyListMustReturnEmptyList() throws Exception {
+        Integer id = 1;
+        when(itemService.getOwnersItem(eq(id))).thenReturn(List.of());
+
+        mockMvc.perform(get("/items")
+                        .header(Constants.HEAD, id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 }
