@@ -2,7 +2,6 @@ package ru.practicum.shareit.booking.dto;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingDto {
-    @NotNull
     private Integer id;
     @NotNull
     @FutureOrPresent
@@ -23,10 +21,8 @@ public class BookingDto {
     @NotNull
     @Future
     private LocalDateTime end;
-    @NotBlank
-    private Integer itemId;
-    @NotBlank
-    private Integer booker;
     @NotNull
+    private Integer itemId;
+    private Integer booker;
     private BookingStatus status;
 }

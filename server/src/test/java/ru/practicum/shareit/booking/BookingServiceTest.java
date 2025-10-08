@@ -1,5 +1,7 @@
 package ru.practicum.shareit.booking;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,15 +12,12 @@ import ru.practicum.shareit.booking.dto.BookingFullDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,42 +32,75 @@ class BookingServiceTest {
     private BookingService bookingService;
 
     @Autowired
-    private UserRepository userRepository;
+    private EntityManager entityManager;
 
-    @Autowired
-    private ItemRepository itemRepository;
+    private User owner;
+    private User booker;
+    private Item item1;
+    private Item item2;
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    @BeforeEach
+    void setup() {
+        owner = createAndSaveUser("Owner", "Owner@email.com");
+        booker = createAndSaveUser("Booker", "Booker@email.com");
+        item1 = createAndSaveItem("Item 1", "Description 1", owner, true);
+        item2 = createAndSaveItem("Item 2", "Description 2", owner, false);
+    }
+
+    private User createAndSaveUser(String name, String email) {
+        User user = User.builder()
+                .name(name)
+                .email(email)
+                .build();
+        entityManager.persist(user);
+        entityManager.flush();
+        return user;
+    }
+
+    private Item createAndSaveItem(String name, String description, User owner, Boolean available) {
+        Item item = Item.builder()
+                .name(name)
+                .description(description)
+                .available(available)
+                .owner(owner)
+                .build();
+        entityManager.persist(item);
+        entityManager.flush();
+        return item;
+    }
+
+    private Booking createAndSaveBooking(LocalDateTime start, LocalDateTime end, Item item, User booker, BookingStatus status) {
+        Booking booking = Booking.builder()
+                .start(start)
+                .end(end)
+                .item(item)
+                .booker(booker)
+                .status(status)
+                .build();
+        entityManager.persist(booking);
+        entityManager.flush();
+        return booking;
+    }
+
 
     @Test
     void createBookingMustCreateReservation() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
-        bookingDto.setStart(LocalDateTime.now().plusHours(3));
-        bookingDto.setEnd(LocalDateTime.now().plusHours(5));
+        bookingDto.setItemId(item1.getId());
+        bookingDto.setStart(LocalDateTime.now().plusHours(1));
+        bookingDto.setEnd(LocalDateTime.now().plusHours(2));
 
         BookingFullDto result = bookingService.createBooking(bookingDto, booker.getId());
 
         assertNotNull(result);
-        assertEquals(item.getId(), result.getItem().getId());
+        assertEquals(item1.getId(), result.getItem().getId());
         assertEquals(booker.getId(), result.getBooker().getId());
     }
 
     @Test
     void createBookingWithUnavailableItemMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                false, owner, null));
-
         BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
+        bookingDto.setItemId(item2.getId());
         bookingDto.setStart(LocalDateTime.now().plusHours(1));
         bookingDto.setEnd(LocalDateTime.now().plusHours(2));
 
@@ -78,17 +110,11 @@ class BookingServiceTest {
 
     @Test
     void getUserBookingsMustReturnUserBookings() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
-        BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
-        bookingDto.setStart(LocalDateTime.now().plusHours(1));
-        bookingDto.setEnd(LocalDateTime.now().plusHours(2));
-
-        bookingService.createBooking(bookingDto, booker.getId());
+        createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item1, booker, BookingStatus.APPROVED
+        );
 
         List<BookingFullDto> result = bookingService.getUserBookings(booker.getId(), BookingState.ALL);
 
@@ -98,8 +124,6 @@ class BookingServiceTest {
 
     @Test
     void createBookingWithNonExistentItemMustThrowException() {
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-
         BookingDto bookingDto = new BookingDto();
         bookingDto.setItemId(1);
         bookingDto.setStart(LocalDateTime.now().plusHours(1));
@@ -122,11 +146,8 @@ class BookingServiceTest {
 
     @Test
     void createBookingWithOwnerBookingOwnItemMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description", true, owner, null));
-
         BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
+        bookingDto.setItemId(item1.getId());
         bookingDto.setStart(LocalDateTime.now().plusHours(1));
         bookingDto.setEnd(LocalDateTime.now().plusHours(2));
 
@@ -146,22 +167,16 @@ class BookingServiceTest {
 
     @Test
     void updateBookingStatusWithNonOwnerMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User user = userRepository.save(new User(null, "User", "User@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
+        User user = createAndSaveUser("User", "User@email.com");
 
-        Item item = itemRepository.save(new Item(null, "Item", "Description", true, owner, null));
-
-        Booking booking = new Booking();
-        booking.setStart(LocalDateTime.now().plusHours(1));
-        booking.setEnd(LocalDateTime.now().plusHours(2));
-        booking.setItem(item);
-        booking.setBooker(booker);
-        booking.setStatus(BookingStatus.WAITING);
-        Booking savedBooking = bookingRepository.save(booking);
+        Booking booking = createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item1, booker, BookingStatus.WAITING
+        );
 
         assertThrows(ForbiddenException.class,
-                () -> bookingService.updateBookingStatus(savedBooking.getId(), BookingStatus.APPROVED, user.getId()));
+                () -> bookingService.updateBookingStatus(booking.getId(), BookingStatus.APPROVED, user.getId()));
     }
 
     @Test
@@ -172,16 +187,11 @@ class BookingServiceTest {
 
     @Test
     void getUserBookingsWithDifferentStatesMustReturnCorrectBookings() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
-        BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
-        bookingDto.setStart(LocalDateTime.now().plusHours(1));
-        bookingDto.setEnd(LocalDateTime.now().plusHours(2));
-        bookingService.createBooking(bookingDto, booker.getId());
+        createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item1, booker, BookingStatus.WAITING
+        );
 
         assertDoesNotThrow(() -> bookingService.getUserBookings(booker.getId(), BookingState.ALL));
         assertDoesNotThrow(() -> bookingService.getUserBookings(booker.getId(), BookingState.FUTURE));
@@ -190,16 +200,11 @@ class BookingServiceTest {
 
     @Test
     void getOwnerBookingsWithDifferentStatesMustReturnCorrectBookings() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
-        BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
-        bookingDto.setStart(LocalDateTime.now().plusHours(1));
-        bookingDto.setEnd(LocalDateTime.now().plusHours(2));
-        bookingService.createBooking(bookingDto, booker.getId());
+        createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item1, booker, BookingStatus.WAITING
+        );
 
         assertDoesNotThrow(() -> bookingService.getOwnerBookings(owner.getId(), BookingState.ALL));
         assertDoesNotThrow(() -> bookingService.getOwnerBookings(owner.getId(), BookingState.FUTURE));
@@ -207,13 +212,8 @@ class BookingServiceTest {
 
     @Test
     void createBookingWithPastStartDateMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
+        bookingDto.setItemId(item1.getId());
         bookingDto.setStart(LocalDateTime.now().plusHours(1));
         bookingDto.setEnd(LocalDateTime.now().minusHours(1));
 
@@ -223,14 +223,9 @@ class BookingServiceTest {
 
     @Test
     void createBookingWithSameStartAndEndMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         LocalDateTime time = LocalDateTime.now().plusHours(1);
         BookingDto bookingDto = new BookingDto();
-        bookingDto.setItemId(item.getId());
+        bookingDto.setItemId(item1.getId());
         bookingDto.setStart(time);
         bookingDto.setEnd(time);
 
@@ -269,21 +264,14 @@ class BookingServiceTest {
 
     @Test
     void updateBookingStatusWhenStatusIsNotWaitingMustThrowForbiddenException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker = userRepository.save(new User(null, "Booker", "Booker@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
-        Booking booking = new Booking();
-        booking.setStart(LocalDateTime.now().plusHours(1));
-        booking.setEnd(LocalDateTime.now().plusHours(2));
-        booking.setItem(item);
-        booking.setBooker(booker);
-        booking.setStatus(BookingStatus.APPROVED);
-        Booking savedBooking = bookingRepository.save(booking);
+        Booking booking = createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item1, booker, BookingStatus.APPROVED
+        );
 
         assertThrows(ForbiddenException.class,
-                () -> bookingService.updateBookingStatus(savedBooking.getId(), BookingStatus.REJECTED, owner.getId()),
+                () -> bookingService.updateBookingStatus(booking.getId(), BookingStatus.REJECTED, owner.getId()),
                 "Бронирование уже обработано");
     }
 }

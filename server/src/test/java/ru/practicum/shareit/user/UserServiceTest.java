@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.ValidationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,13 +45,6 @@ class UserServiceTest {
         User user2 = new User(null, "User1", "User@email.com");
 
         assertThrows(ConflictException.class, () -> userService.createUser(user2));
-    }
-
-    @Test
-    void createUserWithInvalidEmailMustThrowException() {
-        User user = new User(null, "User", "user");
-
-        assertThrows(ru.practicum.shareit.exception.ValidationException.class, () -> userService.createUser(user));
     }
 
     @Test
@@ -125,12 +117,6 @@ class UserServiceTest {
 
         assertEquals("NewUser", result.getName());
         assertEquals("User@email.com", result.getEmail());
-    }
-
-    @Test
-    void createUserWithNullEmailMustThrowException() {
-        User user = new User(null, "User", null);
-        assertThrows(ValidationException.class, () -> userService.createUser(user));
     }
 
     @Test

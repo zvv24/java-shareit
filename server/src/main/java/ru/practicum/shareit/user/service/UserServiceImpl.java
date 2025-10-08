@@ -23,9 +23,7 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new ConflictException("Пользователь с email " + user.getEmail() + " уже существует");
         }
-        if (!user.getEmail().contains("@")) {
-            throw new ru.practicum.shareit.exception.ValidationException("Неверный формата email");
-        }
+
         return userRepository.save(user);
     }
 

@@ -1,22 +1,21 @@
 package ru.practicum.shareit.item;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.comment.dto.CommentDto;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,29 +30,63 @@ class ItemServiceTest {
     private ItemService itemService;
 
     @Autowired
-    private UserRepository userRepository;
+    private EntityManager entityManager;
 
-    @Autowired
-    private ItemRepository itemRepository;
+    private User owner;
+    private User booker;
+    private User user;
+    private Item item;
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    @BeforeEach
+    void setup() {
+        owner = createAndSaveUser("Owner", "Owner@email.com");
+        user = createAndSaveUser("User", "User@email.com");
+        booker = createAndSaveUser("Booker", "Booker@email.com");
+        item = createAndSaveItem("Item", "Description", owner, true);
+    }
+
+    private User createAndSaveUser(String name, String email) {
+        User user = User.builder()
+                .name(name)
+                .email(email)
+                .build();
+        entityManager.persist(user);
+        entityManager.flush();
+        return user;
+    }
+
+    private Item createAndSaveItem(String name, String description, User owner, Boolean available) {
+        Item item = Item.builder()
+                .name(name)
+                .description(description)
+                .available(available)
+                .owner(owner)
+                .build();
+        entityManager.persist(item);
+        entityManager.flush();
+        return item;
+    }
+
+    private Booking createAndSaveBooking(LocalDateTime start, LocalDateTime end, Item item, User booker, BookingStatus status) {
+        Booking booking = Booking.builder()
+                .start(start)
+                .end(end)
+                .item(item)
+                .booker(booker)
+                .status(status)
+                .build();
+        entityManager.persist(booking);
+        entityManager.flush();
+        return booking;
+    }
 
     @Test
     void getOwnersItemMustReturnOwnerItems() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-
         ItemDto itemDto1 = new ItemDto();
         itemDto1.setName("Item1");
         itemDto1.setDescription("Description1");
         itemDto1.setAvailable(true);
         itemService.createItem(itemDto1, owner.getId());
-
-        ItemDto itemDto2 = new ItemDto();
-        itemDto2.setName("Item2");
-        itemDto2.setDescription("Description2");
-        itemDto2.setAvailable(true);
-        itemService.createItem(itemDto2, owner.getId());
 
         List<Item> result = itemService.getOwnersItem(owner.getId());
 
@@ -62,8 +95,6 @@ class ItemServiceTest {
 
     @Test
     void searchingItemsMustReturnAvailableItems() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-
         ItemDto itemDto1 = new ItemDto();
         itemDto1.setName("Item1");
         itemDto1.setDescription("Description1 new item1");
@@ -85,9 +116,6 @@ class ItemServiceTest {
 
     @Test
     void addCommentMustThrowExceptionWhenNoBooking() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User author = userRepository.save(new User(null, "Author", "Author@email.com"));
-
         ItemDto itemDto = new ItemDto();
         itemDto.setName("Item");
         itemDto.setDescription("Description");
@@ -95,10 +123,10 @@ class ItemServiceTest {
         Item item = itemService.createItem(itemDto, owner.getId());
 
         CommentDto commentDto = new CommentDto();
-        commentDto.setText("Great item!");
+        commentDto.setText("Text");
 
         assertThrows(ValidationException.class,
-                () -> itemService.addComment(item.getId(), commentDto, author.getId()));
+                () -> itemService.addComment(item.getId(), commentDto, user.getId()));
     }
 
     @Test
@@ -108,10 +136,6 @@ class ItemServiceTest {
 
     @Test
     void getItemByIdForNonOwnerMustNotIncludeBookingInfo() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User user = userRepository.save(new User(null, "User", "User@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description", true, owner, null));
-
         ItemDto result = itemService.getItemById(item.getId(), user.getId());
 
         assertNotNull(result);
@@ -136,9 +160,6 @@ class ItemServiceTest {
 
     @Test
     void updateItemWithWrongOwnerMustThrowException() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User user = userRepository.save(new User(null, "User", "User@email.com"));
-
         ItemDto itemDto = new ItemDto();
         itemDto.setName("Item");
         itemDto.setDescription("Description");
@@ -154,10 +175,6 @@ class ItemServiceTest {
 
     @Test
     void updateItemWithOnlyNameMustUpdateOnlyName() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         ItemDto updateDto = new ItemDto();
         updateDto.setName("New Item");
 
@@ -170,10 +187,6 @@ class ItemServiceTest {
 
     @Test
     void updateItemWithOnlyDescriptionMustUpdateOnlyDescription() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         ItemDto updateDto = new ItemDto();
         updateDto.setDescription("New Description");
 
@@ -186,10 +199,6 @@ class ItemServiceTest {
 
     @Test
     void updateItemWithOnlyAvailableMustUpdateOnlyAvailable() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
         ItemDto updateDto = new ItemDto();
         updateDto.setAvailable(false);
 
@@ -202,23 +211,16 @@ class ItemServiceTest {
 
     @Test
     void addCommentWithValidBookingMustAddComment() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User author = userRepository.save(new User(null, "Author", "Author@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description",
-                true, owner, null));
-
-        Booking booking = new Booking();
-        booking.setStart(LocalDateTime.now().minusHours(2));
-        booking.setEnd(LocalDateTime.now().minusHours(1));
-        booking.setItem(item);
-        booking.setBooker(author);
-        booking.setStatus(BookingStatus.APPROVED);
-        bookingRepository.save(booking);
+        createAndSaveBooking(
+                LocalDateTime.now().minusHours(2),
+                LocalDateTime.now().minusHours(1),
+                item, booker, BookingStatus.APPROVED
+        );
 
         CommentDto commentDto = new CommentDto();
         commentDto.setText("Text");
 
-        CommentDto result = itemService.addComment(item.getId(), commentDto, author.getId());
+        CommentDto result = itemService.addComment(item.getId(), commentDto, booker.getId());
 
         assertNotNull(result);
         assertEquals("Text", result.getText());
@@ -234,26 +236,20 @@ class ItemServiceTest {
 
     @Test
     void getItemByIdForOwnerWithPastAndFutureBookingsMustIncludeBoth() {
-        User owner = userRepository.save(new User(null, "Owner", "Owner@email.com"));
-        User booker1 = userRepository.save(new User(null, "Booker1", "Booker1@email.com"));
-        User booker2 = userRepository.save(new User(null, "Booker2", "Booker2@email.com"));
-        Item item = itemRepository.save(new Item(null, "Item", "Description", true, owner, null));
+        User booker1 = createAndSaveUser("Booker1", "Booker1@email.com");
+        User booker2 = createAndSaveUser("Booker2", "Booker2@email.com");
 
-        Booking pastBooking = new Booking();
-        pastBooking.setStart(LocalDateTime.now().minusHours(3));
-        pastBooking.setEnd(LocalDateTime.now().minusHours(1));
-        pastBooking.setItem(item);
-        pastBooking.setBooker(booker1);
-        pastBooking.setStatus(BookingStatus.APPROVED);
-        bookingRepository.save(pastBooking);
+        Booking pastBooking = createAndSaveBooking(
+                LocalDateTime.now().minusHours(3),
+                LocalDateTime.now().minusHours(1),
+                item, booker1, BookingStatus.APPROVED
+        );
 
-        Booking futureBooking = new Booking();
-        futureBooking.setStart(LocalDateTime.now().plusHours(1));
-        futureBooking.setEnd(LocalDateTime.now().plusHours(2));
-        futureBooking.setItem(item);
-        futureBooking.setBooker(booker2);
-        futureBooking.setStatus(BookingStatus.APPROVED);
-        bookingRepository.save(futureBooking);
+        Booking futureBooking = createAndSaveBooking(
+                LocalDateTime.now().plusHours(1),
+                LocalDateTime.now().plusHours(2),
+                item, booker2, BookingStatus.APPROVED
+        );
 
         ItemDto result = itemService.getItemById(item.getId(), owner.getId());
 
